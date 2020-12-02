@@ -17,10 +17,14 @@ w, h = 640 * sz, 480 * sz
 
 print(f'compiled in {t0:.2} run fractal on size {w, h}={w * h} pix', end='')
 
-bgeo = m.buffer(np.array([w, h], dtype=np.int32))
-bpix = m.empty(w * h * 4)
+# create i/o buffers to match kernel func. params
+bsize = m.int_buf([w, h]) # input: size(w,h), center(x,y), range(x,y)
+bcenter = m.float_buf([0.5, 0])
+brange = m.float_buf([-2, 2])
 
-m.set_buffers(buffers=(bpix, bgeo), threads=(w, h))
+bpix = m.empty_int(w * h) # output
+
+m.set_buffers(buffers=(bpix, bsize, bcenter, brange), threads=(w, h))
 
 t = lap()
 

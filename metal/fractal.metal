@@ -13,8 +13,8 @@ struct Complex
     T re=0, im=0;
 
     inline Complex() { re = im = 0; }
-    inline Complex(T re) : re(re), im(0) { }
     inline Complex(T re, T im) : re(re), im(im) { }
+    inline Complex(T re) : re(re), im(0) { }
 
     inline T arg() const { return ::atan2(im, re);  }
     inline T abs() const { return ::sqrt(sqmag());  }
@@ -194,41 +194,38 @@ constant int fire_palette[n_palette]={0, 0, 4, 12, 16, 24, 32, 36, 44, 48, 56, 6
                          152, 148, 144, 140, 136, 132, 128, 124, 120, 116, 112, 108, 104, 100, 96, 92, 88, 84, 80, 76,
                          72, 68, 64, 60, 56, 52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 12, 8, 0, 0};
 
+//constant ComplexFloat center=c(0.5, 0), // could be parameters
+//                      range=c(-2, 1.7);
 
 typedef uint32_t color; // aa bb gg rr  32 bit color
 
 inline uint pos2index(uint2 position, uint width) { return position.x + width * position.y; }
-ComplexFloat do_scale(ComplexFloat cr, ComplexFloat _range, int i, int j, int w, int h) {
-            return cr + ComplexFloat((_range.im - _range.re) * i / w,
-                                     (_range.im - _range.re) * j / h);
+ComplexFloat do_scale(ComplexFloat cr, ComplexFloat range, int i, int j, int w, int h) {
+            return cr + ComplexFloat((range.im - range.re) * i / w,
+                                     (range.im - range.re) * j / h);
 }
 
-color mandelbrot(uint i, uint j, uint w, uint h) {
-        ComplexFloat center = c(0.5, 0);  // could be parameters
-        float scale = 0.8;
+color mandelbrot(uint i, uint j, uint w, uint h, ComplexFloat center, ComplexFloat range) {
+        float scale = 0.8, ratio = w / h;
         int iter = 200, ix;
-        ComplexFloat _range(-2, 1.7);
-
-        float ratio = w / h;
-        ComplexFloat cr = c(_range.re, _range.re),
-                     c0 = ComplexFloat(c(scale * ratio) * do_scale(cr, _range, i, j, w, h) - center),
+        ComplexFloat cr = c(range.re, range.re),
+                     c0 = ComplexFloat(c(scale * ratio) * do_scale(cr, range, i, j, w, h) - center),
                      z = c0;
 
         for (ix=0; ix<iter; ix++) {
              z = z * z + c0;  // z*z is the typical 2nd order fractal
              if (z.abs() > 2) break;
         }
-        int ix_col = (ix == iter - 1) ? 0 : (n_palette * ix / 50) % n_palette;
-        return 0xff000000 | fire_palette[ix_col];
+        return 0xff000000 | ( (ix == iter - 1) ? 0 : fire_palette[(n_palette * ix / 50) % n_palette] );
 }
 
-kernel void fractal(  device color*colors[[buffer(0)]], // buffer per device
-                      device const uint2&size[[buffer(1)]], // [w,h]
+kernel void fractal(  device color*colors             [[buffer(0)]], // output color image
+                      device const uint2&size         [[buffer(1)]], // (w,h) as a numpy([w,h], dtype=np.int32)
+                      device const ComplexFloat&center[[buffer(2)]],
+                      device const ComplexFloat&range [[buffer(3)]],
 
                       uint2 position [[thread_position_in_grid]] ) // 0..w*h
 {
-    uint w=size.x, h=size.y;
-
-    colors[ pos2index(position, w) ] = mandelbrot(position.x, position.y, w, h);
+    colors[ pos2index(position, size.x) ] = mandelbrot(position.x, position.y, size.x, size.y, center, range);
 }
 

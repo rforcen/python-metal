@@ -49,8 +49,20 @@ class Metal():
         if type(data) is float:
             return self.pm.floatbuffer(data)
 
+    def float_buf(self, data):
+        return self.buffer(numpy.array(data, dtype=numpy.float32))
+
+    def int_buf(self, data):
+        return self.buffer(numpy.array(data, dtype=numpy.int32))
+
     def empty(self, size):
         return self.pm.emptybuffer(size)
+
+    def empty_int(self, size):
+        return self.empty(size * numpy.dtype(numpy.int32).itemsize)
+
+    def empty_float(self, size):
+        return self.empty(size * numpy.dtype(numpy.float32).itemsize)
 
     def set_buffers(self, buffers=None, threads=None):  # set of buffers
         self.cqueue, self.cbuffer = self.pm.getqueue()
