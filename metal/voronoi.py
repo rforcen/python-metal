@@ -27,9 +27,9 @@ print(
 def randpc():  # random point(x,y), color, n_points
     v = np.empty((n_points, 4), dtype=uint32)
     for i in prange(n_points):
-        v[i, 0] = random.uniform(0, w)  # x(0..w) ,y(0..h)
-        v[i, 1] = random.uniform(0, h)
-        v[i, 2] = random.uniform(0, 0x00ffffff)  # color (0..0xffffff)
+        v[i, 0] = random.randint(0, w)  # x(0..w) ,y(0..h)
+        v[i, 1] = random.randint(0, h)
+        v[i, 2] = random.randint(0, 0x00ffffff)  # color (0..0xffffff)
         v[i, 3] = n_points # use this wasted alignment space for n_points...
     return v
 
